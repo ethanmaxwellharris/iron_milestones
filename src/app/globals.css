@@ -1,0 +1,155 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   IRON MILESTONES — global styles
+   Renaissance anatomical plate × 90s CD-ROM encyclopedia.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  body {
+    @apply bg-forge-950 text-parchment-100 font-sans antialiased;
+    /* Faint drafting grid + deep green vignette, like a plate from an old atlas. */
+    background-image:
+      radial-gradient(ellipse 120% 90% at 50% -10%, rgba(61, 85, 42, 0.28), transparent 60%),
+      radial-gradient(ellipse 100% 100% at 50% 110%, rgba(21, 24, 27, 0.9), transparent 55%),
+      repeating-linear-gradient(0deg, rgba(238, 227, 198, 0.025) 0 1px, transparent 1px 48px),
+      repeating-linear-gradient(90deg, rgba(238, 227, 198, 0.025) 0 1px, transparent 1px 48px);
+    background-attachment: fixed;
+    min-height: 100dvh;
+  }
+
+  h1, h2, h3, h4 {
+    @apply font-serif tracking-wide;
+  }
+
+  ::selection {
+    @apply bg-gold-dark text-parchment-50;
+  }
+}
+
+@layer components {
+  /* CRT scanlines laid over the whole app — the Encarta ghost. */
+  .scanlines {
+    pointer-events: none;
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent 0 2px,
+      rgba(0, 0, 0, 0.09) 2px 3px
+    );
+    mix-blend-mode: multiply;
+    opacity: 0.55;
+  }
+
+  /* Beveled 90s UI chrome */
+  .bevel {
+    @apply border border-black/60 shadow-bevel;
+  }
+
+  .panel {
+    @apply bevel rounded-sm bg-gradient-to-b from-gunmetal-700 to-gunmetal-800 p-4;
+  }
+
+  .panel-parchment {
+    @apply bevel rounded-sm p-4 text-gunmetal-900;
+    background:
+      repeating-linear-gradient(0deg, rgba(107, 85, 51, 0.05) 0 2px, transparent 2px 4px),
+      linear-gradient(160deg, #eee3c6 0%, #e2d2ab 55%, #d1bc8d 100%);
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-sm px-4 py-2 text-sm font-semibold
+      uppercase tracking-widest transition-transform duration-75 select-none
+      focus:outline-none focus-visible:ring-2 focus-visible:ring-gold active:translate-y-px;
+  }
+
+  .btn-primary {
+    @apply btn bevel bg-gradient-to-b from-forge-500 to-forge-700 text-parchment-50 hover:from-forge-400 hover:to-forge-600;
+  }
+
+  .btn-gold {
+    @apply btn bevel bg-gradient-to-b from-gold-bright to-gold-dim text-gunmetal-900 hover:brightness-110;
+  }
+
+  .btn-ghost {
+    @apply btn border border-gunmetal-500 bg-transparent text-parchment-200 hover:bg-gunmetal-700;
+  }
+
+  .btn-danger {
+    @apply btn bevel bg-gradient-to-b from-blood-bright to-blood-dark text-parchment-50 hover:brightness-110;
+  }
+
+  .input {
+    @apply w-full rounded-sm border border-gunmetal-500 bg-gunmetal-900 px-3 py-2 text-sm
+      text-parchment-100 shadow-bevel-in placeholder:text-gunmetal-400
+      focus:border-gold-dim focus:outline-none focus:ring-1 focus:ring-gold-dim;
+  }
+
+  .label {
+    @apply mb-1 block text-[11px] font-semibold uppercase tracking-[0.18em] text-parchment-400;
+  }
+
+  .plate-heading {
+    @apply font-serif text-parchment-50;
+    text-shadow: 0 1px 0 rgba(0, 0, 0, 0.8), 0 0 18px rgba(201, 162, 39, 0.15);
+  }
+
+  /* Ornamental rule, like a chapter divider in an old encyclopedia. */
+  .rule-ornate {
+    @apply relative my-4 h-px bg-gradient-to-r from-transparent via-gold-dim to-transparent;
+  }
+  .rule-ornate::after {
+    content: "❖";
+    @apply absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-transparent px-2 text-[10px] text-gold-dim;
+  }
+
+  /* Achievement grimoire card */
+  .codex-card {
+    @apply bevel relative overflow-hidden rounded-sm bg-gradient-to-b from-gunmetal-700 via-gunmetal-800 to-gunmetal-900 p-4;
+  }
+  .codex-card::before {
+    /* subtle scanline grain on each card */
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: repeating-linear-gradient(0deg, transparent 0 3px, rgba(0, 0, 0, 0.08) 3px 4px);
+  }
+  .codex-card--locked {
+    @apply opacity-80 saturate-50;
+  }
+  .codex-card--unlocked {
+    box-shadow:
+      inset 1px 1px 0 rgba(224, 188, 74, 0.25),
+      inset -1px -1px 0 rgba(0, 0, 0, 0.55),
+      0 0 22px rgba(201, 162, 39, 0.12),
+      0 2px 6px rgba(0, 0, 0, 0.45);
+  }
+
+  .progress-track {
+    @apply h-2 w-full overflow-hidden rounded-sm border border-black/50 bg-gunmetal-900 shadow-bevel-in;
+  }
+  .progress-fill {
+    @apply h-full bg-gradient-to-r from-forge-600 via-forge-400 to-gold-dim transition-[width] duration-500;
+  }
+  .progress-fill--done {
+    @apply bg-gradient-to-r from-gold-dim via-gold to-gold-bright;
+  }
+}
+
+/* Rarity chips — deliberately OUTSIDE @layer: these class names are composed
+   dynamically (`rarity-${rarity}`) so Tailwind's content scan can't see them
+   and would otherwise purge them. */
+.rarity-common { color: #d1bc8d; border-color: #8a6f44; }
+.rarity-uncommon { color: #567243; border-color: #3d552a; }
+.rarity-rare { color: #8fb0c9; border-color: #6b8aa3; }
+.rarity-epic { color: #b04343; border-color: #8d2f2f; }
+.rarity-legendary { color: #e0bc4a; border-color: #8a6d1d; }
