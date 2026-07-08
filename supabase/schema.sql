@@ -19,10 +19,13 @@ create table if not exists public.profiles (
 
 alter table public.profiles enable row level security;
 
+drop policy if exists "Users can view own profile" on public.profiles;
 create policy "Users can view own profile"
   on public.profiles for select using (auth.uid() = id);
+drop policy if exists "Users can insert own profile" on public.profiles;
 create policy "Users can insert own profile"
   on public.profiles for insert with check (auth.uid() = id);
+drop policy if exists "Users can update own profile" on public.profiles;
 create policy "Users can update own profile"
   on public.profiles for update using (auth.uid() = id);
 
@@ -57,10 +60,13 @@ create table if not exists public.lifts (
 
 alter table public.lifts enable row level security;
 
+drop policy if exists "Anyone can view global lifts, users their own" on public.lifts;
 create policy "Anyone can view global lifts, users their own"
   on public.lifts for select using (user_id is null or auth.uid() = user_id);
+drop policy if exists "Users can insert own lifts" on public.lifts;
 create policy "Users can insert own lifts"
   on public.lifts for insert with check (auth.uid() = user_id);
+drop policy if exists "Users can delete own lifts" on public.lifts;
 create policy "Users can delete own lifts"
   on public.lifts for delete using (auth.uid() = user_id);
 
@@ -86,12 +92,16 @@ create index if not exists workouts_user_date_idx on public.workouts (user_id, p
 
 alter table public.workouts enable row level security;
 
+drop policy if exists "Users own their workouts (select)" on public.workouts;
 create policy "Users own their workouts (select)"
   on public.workouts for select using (auth.uid() = user_id);
+drop policy if exists "Users own their workouts (insert)" on public.workouts;
 create policy "Users own their workouts (insert)"
   on public.workouts for insert with check (auth.uid() = user_id);
+drop policy if exists "Users own their workouts (update)" on public.workouts;
 create policy "Users own their workouts (update)"
   on public.workouts for update using (auth.uid() = user_id);
+drop policy if exists "Users own their workouts (delete)" on public.workouts;
 create policy "Users own their workouts (delete)"
   on public.workouts for delete using (auth.uid() = user_id);
 
@@ -111,12 +121,16 @@ create index if not exists workout_sets_user_lift_idx on public.workout_sets (us
 
 alter table public.workout_sets enable row level security;
 
+drop policy if exists "Users own their sets (select)" on public.workout_sets;
 create policy "Users own their sets (select)"
   on public.workout_sets for select using (auth.uid() = user_id);
+drop policy if exists "Users own their sets (insert)" on public.workout_sets;
 create policy "Users own their sets (insert)"
   on public.workout_sets for insert with check (auth.uid() = user_id);
+drop policy if exists "Users own their sets (update)" on public.workout_sets;
 create policy "Users own their sets (update)"
   on public.workout_sets for update using (auth.uid() = user_id);
+drop policy if exists "Users own their sets (delete)" on public.workout_sets;
 create policy "Users own their sets (delete)"
   on public.workout_sets for delete using (auth.uid() = user_id);
 
@@ -140,6 +154,7 @@ create table if not exists public.achievements (
 
 alter table public.achievements enable row level security;
 
+drop policy if exists "Achievements are public" on public.achievements;
 create policy "Achievements are public"
   on public.achievements for select using (true);
 
@@ -153,8 +168,10 @@ create table if not exists public.user_achievements (
 
 alter table public.user_achievements enable row level security;
 
+drop policy if exists "Users own their unlocks (select)" on public.user_achievements;
 create policy "Users own their unlocks (select)"
   on public.user_achievements for select using (auth.uid() = user_id);
+drop policy if exists "Users own their unlocks (insert)" on public.user_achievements;
 create policy "Users own their unlocks (insert)"
   on public.user_achievements for insert with check (auth.uid() = user_id);
 
@@ -181,10 +198,13 @@ create index if not exists user_orders_user_period_idx
 
 alter table public.user_orders enable row level security;
 
+drop policy if exists "Users own their orders (select)" on public.user_orders;
 create policy "Users own their orders (select)"
   on public.user_orders for select using (auth.uid() = user_id);
+drop policy if exists "Users own their orders (insert)" on public.user_orders;
 create policy "Users own their orders (insert)"
   on public.user_orders for insert with check (auth.uid() = user_id);
+drop policy if exists "Users own their orders (update)" on public.user_orders;
 create policy "Users own their orders (update)"
   on public.user_orders for update using (auth.uid() = user_id);
 
@@ -193,8 +213,10 @@ insert into storage.buckets (id, name, public)
 values ('avatars', 'avatars', true)
 on conflict do nothing;
 
+drop policy if exists "Avatar images are publicly readable" on storage.objects;
 create policy "Avatar images are publicly readable"
   on storage.objects for select using (bucket_id = 'avatars');
+drop policy if exists "Users can upload own avatar" on storage.objects;
 create policy "Users can upload own avatar"
   on storage.objects for insert
   with check (bucket_id = 'avatars' and (storage.foldername(name))[1] = auth.uid()::text);
