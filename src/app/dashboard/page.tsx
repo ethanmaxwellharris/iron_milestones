@@ -111,7 +111,7 @@ export default function DashboardPage() {
             <SectionTitle sub="Cumulative best e1RM by session" className="mb-2">
               The Ascent
             </SectionTitle>
-            <LiftProgressChart workouts={workouts} />
+            <LiftProgressChart workouts={workouts} unit={profile.unit} />
           </Panel>
 
           {/* Streak + challenge + quote */}
@@ -149,10 +149,10 @@ export default function DashboardPage() {
           </SectionTitle>
           <div className="grid gap-4 md:grid-cols-2">
             {recentUnlocks.map((p) => (
-              <AchievementCard key={p.achievement.id} progress={p} unlockedAt={unlocked[p.achievement.id]} />
+              <AchievementCard key={p.achievement.id} progress={p} unlockedAt={unlocked[p.achievement.id]} unit={profile.unit} />
             ))}
             {nextUp.map((p) => (
-              <AchievementCard key={p.achievement.id} progress={p} />
+              <AchievementCard key={p.achievement.id} progress={p} unit={profile.unit} />
             ))}
           </div>
           <div className="mt-4 text-center">

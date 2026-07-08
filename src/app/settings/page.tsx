@@ -11,6 +11,7 @@ import { AppNav } from "@/components/nav";
 import { Panel, SectionTitle } from "@/components/ui";
 import { useIronStore, type Profile } from "@/lib/store";
 import { getSupabase, isSupabaseConfigured } from "@/lib/supabase";
+import { kgToLb, lbToKg } from "@/lib/oneRm";
 import { liftName } from "@/lib/utils";
 
 function download(filename: string, contents: string, type: string) {
@@ -28,8 +29,23 @@ export default function SettingsPage() {
   const [email, setEmail] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [form, setForm] = useState<Profile>(state.profile);
+  // Bodyweight is edited as text in the display unit; stored canonically in kg.
+  const [bwText, setBwText] = useState("");
 
-  useEffect(() => setForm(state.profile), [state.profile]);
+  useEffect(() => {
+    setForm(state.profile);
+    setBwText(
+      state.profile.bodyweightKg
+        ? String(
+            Math.round(
+              (state.profile.unit === "kg"
+                ? state.profile.bodyweightKg
+                : kgToLb(state.profile.bodyweightKg)) * 10,
+            ) / 10,
+          )
+        : "",
+    );
+  }, [state.profile]);
 
   useEffect(() => {
     if (!isSupabaseConfigured) return;
@@ -87,18 +103,33 @@ export default function SettingsPage() {
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="label" htmlFor="bw">Bodyweight (kg)</label>
+              <label className="label" htmlFor="bw">Bodyweight ({form.unit})</label>
               <input id="bw" className="input" inputMode="decimal"
-                value={form.bodyweightKg ?? ""}
+                value={bwText}
+                placeholder={form.unit === "kg" ? "82.5" : "182"}
                 onChange={(e) => {
+                  setBwText(e.target.value);
                   const n = parseFloat(e.target.value);
-                  setForm({ ...form, bodyweightKg: Number.isFinite(n) && n > 0 ? n : null });
+                  const kg = form.unit === "kg" ? n : lbToKg(n);
+                  setForm({
+                    ...form,
+                    bodyweightKg: Number.isFinite(kg) && kg > 0 ? Math.round(kg * 10) / 10 : null,
+                  });
                 }} />
             </div>
             <div>
               <label className="label" htmlFor="unit">Display unit</label>
               <select id="unit" className="input" value={form.unit}
-                onChange={(e) => setForm({ ...form, unit: e.target.value as "kg" | "lb" })}>
+                onChange={(e) => {
+                  const unit = e.target.value as "kg" | "lb";
+                  setForm({ ...form, unit });
+                  // Re-express the bodyweight field in the new unit.
+                  setBwText(
+                    form.bodyweightKg
+                      ? String(Math.round((unit === "kg" ? form.bodyweightKg : kgToLb(form.bodyweightKg)) * 10) / 10)
+                      : "",
+                  );
+                }}>
                 <option value="kg">Kilograms</option>
                 <option value="lb">Pounds</option>
               </select>

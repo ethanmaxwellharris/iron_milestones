@@ -16,7 +16,7 @@ import {
 } from "recharts";
 import { useMemo } from "react";
 import type { Workout } from "@/lib/store";
-import { estimate1Rm } from "@/lib/oneRm";
+import { estimate1Rm, formatWeight, kgToLb } from "@/lib/oneRm";
 import { liftName } from "@/lib/utils";
 
 const LINE_COLORS: Record<string, string> = {
@@ -49,10 +49,12 @@ export function LiftProgressChart({
   workouts,
   lifts = ["squat", "bench", "deadlift"],
   height = 260,
+  unit = "kg",
 }: {
   workouts: Workout[];
   lifts?: string[];
   height?: number;
+  unit?: "kg" | "lb";
 }) {
   const data = useMemo(() => buildSeries(workouts, lifts), [workouts, lifts]);
 
@@ -79,7 +81,7 @@ export function LiftProgressChart({
           stroke="#454d56"
           unit=""
           width={54}
-          tickFormatter={(v: number) => `${v}kg`}
+          tickFormatter={(v: number) => (unit === "kg" ? `${v}kg` : `${Math.round(kgToLb(v))}lb`)}
         />
         <Tooltip
           contentStyle={{
@@ -90,7 +92,7 @@ export function LiftProgressChart({
             fontFamily: "Verdana",
           }}
           labelStyle={{ color: "#eee3c6" }}
-          formatter={(value: number, name: string) => [`${value} kg (e1RM)`, liftName(name)]}
+          formatter={(value: number, name: string) => [`${formatWeight(value, unit)} (e1RM)`, liftName(name)]}
         />
         {lifts.map((l) => (
           <Line

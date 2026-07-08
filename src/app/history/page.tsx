@@ -48,7 +48,7 @@ export default function HistoryPage() {
               ))}
             </select>
           </div>
-          <LiftProgressChart workouts={workouts} lifts={chartLifts} />
+          <LiftProgressChart workouts={workouts} lifts={chartLifts} unit={profile.unit} />
         </Panel>
 
         <div className="space-y-3">

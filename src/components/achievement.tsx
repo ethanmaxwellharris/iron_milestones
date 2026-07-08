@@ -98,20 +98,30 @@ export function AchievementMedallion({
   );
 }
 
-function formatReqValue(label: string, current: number, target: number): string {
+type Unit = "kg" | "lb";
+
+function formatReqValue(label: string, current: number, target: number, unit: Unit): string {
   const isWeight = /kg|bodyweight/i.test(label);
-  if (isWeight) return `${formatWeight(current)} / ${formatWeight(target)}`;
+  if (isWeight) return `${formatWeight(current, unit)} / ${formatWeight(target, unit)}`;
   return `${Math.floor(current)} / ${target}`;
+}
+
+/** Requirement labels are canonical kg ("Bench Press 227 kg"); re-express in lb. */
+function localizeLabel(label: string, unit: Unit): string {
+  if (unit === "kg") return label;
+  return label.replace(/(\d+(?:\.\d+)?)\s*kg/g, (_, n: string) => formatWeight(parseFloat(n), "lb"));
 }
 
 export function AchievementCard({
   progress,
   unlockedAt,
   animate = false,
+  unit = "kg",
 }: {
   progress: AchievementProgress;
   unlockedAt?: string;
   animate?: boolean;
+  unit?: Unit;
 }) {
   const { achievement: a, unlocked, fraction, requirements } = progress;
   return (
@@ -151,9 +161,9 @@ export function AchievementCard({
         {requirements.map((r, i) => (
           <div key={i} className="space-y-1">
             <div className="flex items-baseline justify-between gap-2 text-[11px]">
-              <span className="text-parchment-400">{r.label}</span>
+              <span className="text-parchment-400">{localizeLabel(r.label, unit)}</span>
               <span className={cn("tabular-nums", r.fraction >= 1 ? "text-gold-bright" : "text-parchment-300")}>
-                {formatReqValue(r.label, r.current, r.target)}
+                {formatReqValue(r.label, r.current, r.target, unit)}
               </span>
             </div>
             <ProgressBar fraction={r.fraction} />

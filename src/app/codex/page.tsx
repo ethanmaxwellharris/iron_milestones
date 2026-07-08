@@ -105,7 +105,7 @@ export default function CodexPage() {
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {filtered.map((p) => (
-              <AchievementCard key={p.achievement.id} progress={p} unlockedAt={unlocked[p.achievement.id]} />
+              <AchievementCard key={p.achievement.id} progress={p} unlockedAt={unlocked[p.achievement.id]} unit={profile.unit} />
             ))}
           </div>
         )}
