@@ -21,7 +21,7 @@ export async function fullSync(): Promise<void> {
     if (cloud) {
       mergeCloudState(cloud);
       const merged = useIronStore.getState();
-      await pushAllLocal(merged.workouts, merged.profile, merged.xp, Object.keys(merged.unlocked));
+      await pushAllLocal(merged.workouts, merged.profile, merged.xp, Object.keys(merged.unlocked), merged.orderStates);
     }
   } finally {
     setCloudReady(true);

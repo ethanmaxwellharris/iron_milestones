@@ -158,6 +158,36 @@ create policy "Users own their unlocks (select)"
 create policy "Users own their unlocks (insert)"
   on public.user_achievements for insert with check (auth.uid() = user_id);
 
+-- ── Forge Orders & Iron Contracts ──────────────────────────────────────────
+-- Canonical order/contract definitions live in src/lib/orders.ts. This table
+-- stores only each user's claimed/completed state so the system syncs cleanly.
+create table if not exists public.user_orders (
+  user_id         uuid not null references auth.users (id) on delete cascade,
+  order_id        text not null,
+  period_key      text not null,
+  kind            text not null check (kind in ('daily', 'weekly', 'contract')),
+  status          text not null check (status in ('claimed', 'completed', 'expired')),
+  claimed_at      timestamptz not null default now(),
+  completed_at    timestamptz,
+  expires_at      timestamptz not null,
+  xp_awarded      integer not null default 0 check (xp_awarded >= 0),
+  manual_progress jsonb not null default '{}'::jsonb,
+  updated_at      timestamptz not null default now(),
+  primary key (user_id, order_id, period_key)
+);
+
+create index if not exists user_orders_user_period_idx
+  on public.user_orders (user_id, period_key);
+
+alter table public.user_orders enable row level security;
+
+create policy "Users own their orders (select)"
+  on public.user_orders for select using (auth.uid() = user_id);
+create policy "Users own their orders (insert)"
+  on public.user_orders for insert with check (auth.uid() = user_id);
+create policy "Users own their orders (update)"
+  on public.user_orders for update using (auth.uid() = user_id);
+
 -- ── Storage: avatars & lift photos ──────────────────────────────────────────
 insert into storage.buckets (id, name, public)
 values ('avatars', 'avatars', true)

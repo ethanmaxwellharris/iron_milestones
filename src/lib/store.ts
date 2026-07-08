@@ -13,7 +13,9 @@ import type { Achievement } from "@/lib/codex/types";
 import { computeStats, newlyUnlocked } from "@/lib/codex/engine";
 import { PR_XP, workoutXp } from "@/lib/xp";
 import { uid } from "@/lib/utils";
-import { pushProfile, pushUnlocks, pushWorkout } from "@/lib/sync";
+import { pushOrderState, pushProfile, pushUnlocks, pushWorkout } from "@/lib/sync";
+import type { GeneratedOrder, UserOrderState } from "@/lib/orders";
+import { orderStateKey } from "@/lib/orders";
 
 export interface LoggedSet {
   lift: string;
@@ -62,16 +64,21 @@ interface IronState {
   unlocked: Record<string, string>;
   xp: number;
   customLifts: CustomLift[];
+  orderStates: Record<string, UserOrderState>;
 
   completeOnboarding: (profile: Profile, baseline: LoggedSet[]) => LogResult;
   updateProfile: (patch: Partial<Profile>) => void;
   logWorkout: (w: Omit<Workout, "id">) => LogResult;
   addCustomLift: (name: string) => CustomLift;
+  claimOrder: (order: GeneratedOrder) => void;
+  setManualOrderProgress: (order: GeneratedOrder, requirementIndex: number, value: number) => void;
+  completeOrder: (order: GeneratedOrder) => number;
   mergeCloudState: (cloud: {
     profile: Partial<Profile>;
     xp: number;
     workouts: Workout[];
     unlocked: Record<string, string>;
+    orderStates: Record<string, UserOrderState>;
   }) => void;
   resetAll: () => void;
 }
@@ -123,6 +130,7 @@ export const useIronStore = create<IronState>()(
       unlocked: {},
       xp: 0,
       customLifts: [],
+      orderStates: {},
 
       completeOnboarding: (profile, baseline) => {
         const state = get();
@@ -182,6 +190,58 @@ export const useIronStore = create<IronState>()(
         return liftDef;
       },
 
+      claimOrder: (order) => {
+        const state = get();
+        const key = orderStateKey(order.definition.id, order.periodKey);
+        if (state.orderStates[key]) return;
+        const now = new Date().toISOString();
+        const orderState: UserOrderState = {
+          orderId: order.definition.id,
+          periodKey: order.periodKey,
+          kind: order.definition.kind,
+          status: "claimed",
+          claimedAt: now,
+          expiresAt: order.expiresAt,
+          xpAwarded: 0,
+        };
+        set({ orderStates: { ...state.orderStates, [key]: orderState } });
+        void pushOrderState(orderState);
+      },
+
+      setManualOrderProgress: (order, requirementIndex, value) => {
+        const state = get();
+        const key = orderStateKey(order.definition.id, order.periodKey);
+        const existing = state.orderStates[key];
+        if (!existing || existing.status === "completed") return;
+        const next: UserOrderState = {
+          ...existing,
+          manualProgress: {
+            ...(existing.manualProgress ?? {}),
+            [String(requirementIndex)]: Math.max(0, Math.floor(value)),
+          },
+        };
+        set({ orderStates: { ...state.orderStates, [key]: next } });
+        void pushOrderState(next);
+      },
+
+      completeOrder: (order) => {
+        const state = get();
+        const key = orderStateKey(order.definition.id, order.periodKey);
+        const existing = state.orderStates[key];
+        if (!existing || existing.status === "completed" || existing.xpAwarded > 0) return 0;
+        const xp = state.xp + order.definition.xp;
+        const next: UserOrderState = {
+          ...existing,
+          status: "completed",
+          completedAt: new Date().toISOString(),
+          xpAwarded: order.definition.xp,
+        };
+        set({ orderStates: { ...state.orderStates, [key]: next }, xp });
+        void pushOrderState(next);
+        void pushProfile(state.profile, xp);
+        return order.definition.xp;
+      },
+
       mergeCloudState: (cloud) => {
         const state = get();
         // Cloud wins for anything it has; local-only workouts are kept.
@@ -190,11 +250,19 @@ export const useIronStore = create<IronState>()(
         const workouts = [...byId.values()].sort((a, b) =>
           a.performedOn.localeCompare(b.performedOn),
         );
+        const orderStates = { ...state.orderStates };
+        for (const [key, cloudOrder] of Object.entries(cloud.orderStates)) {
+          const local = orderStates[key];
+          if (!local || cloudOrder.status === "completed" || local.status !== "completed") {
+            orderStates[key] = cloudOrder;
+          }
+        }
         set({
           profile: { ...state.profile, ...cloud.profile },
           xp: Math.max(state.xp, cloud.xp),
           workouts,
           unlocked: { ...state.unlocked, ...cloud.unlocked },
+          orderStates,
           onboarded: state.onboarded || cloud.workouts.length > 0 || !!cloud.profile.bodyweightKg,
         });
       },
@@ -207,6 +275,7 @@ export const useIronStore = create<IronState>()(
           unlocked: {},
           xp: 0,
           customLifts: [],
+          orderStates: {},
         }),
     }),
     {

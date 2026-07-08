@@ -2,18 +2,19 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BookOpen, Dumbbell, History, Landmark, LayoutDashboard, Settings } from "lucide-react";
+import { BookOpen, Dumbbell, History, Landmark, LayoutDashboard, Settings, Trophy } from "lucide-react";
 import { useIronStore } from "@/lib/store";
 import { RankBadge } from "@/components/xp";
 import { cn } from "@/lib/utils";
 
 const LINKS = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/log", label: "Log Lift", icon: Dumbbell },
-  { href: "/codex", label: "Codex", icon: BookOpen },
-  { href: "/hall", label: "Hall of Iron", icon: Landmark },
-  { href: "/history", label: "History", icon: History },
-  { href: "/settings", label: "Settings", icon: Settings },
+  { href: "/dashboard", label: "Dashboard", mobileLabel: "Home", icon: LayoutDashboard },
+  { href: "/log", label: "Log Lift", mobileLabel: "Log", icon: Dumbbell },
+  { href: "/arena", label: "Arena", mobileLabel: "Arena", icon: Trophy },
+  { href: "/codex", label: "Codex", mobileLabel: "Codex", icon: BookOpen },
+  { href: "/hall", label: "Hall of Iron", mobileLabel: "Hall", icon: Landmark },
+  { href: "/history", label: "History", mobileLabel: "History", icon: History },
+  { href: "/settings", label: "Settings", mobileLabel: "Settings", icon: Settings },
 ] as const;
 
 export function AppNav() {
@@ -57,17 +58,17 @@ export function AppNav() {
 
       {/* Mobile bottom nav */}
       <nav className="bevel fixed inset-x-0 bottom-0 z-50 flex justify-around border-x-0 border-b-0 bg-gradient-to-b from-gunmetal-700 to-gunmetal-900 pb-[env(safe-area-inset-bottom)] md:hidden">
-        {LINKS.map(({ href, label, icon: Icon }) => (
+        {LINKS.map(({ href, label, mobileLabel, icon: Icon }) => (
           <Link
             key={href}
             href={href}
             className={cn(
-              "flex flex-1 flex-col items-center gap-0.5 py-2 text-[9px] font-semibold uppercase tracking-wider",
+              "flex flex-1 flex-col items-center gap-0.5 py-2 text-[8px] font-semibold uppercase tracking-wider sm:text-[9px]",
               pathname.startsWith(href) ? "text-gold-bright" : "text-parchment-400",
             )}
           >
             <Icon size={17} />
-            {label}
+            {mobileLabel}
           </Link>
         ))}
       </nav>
