@@ -42,7 +42,7 @@ export default function OnboardingPage() {
       return kg ? [{ lift: slug, kg, reps: 1 }] : [];
     });
     const res = completeOnboarding(
-      { name: name.trim(), bodyweightKg: toKg(bodyweight), experience, unit },
+      { name: name.trim(), bodyweightKg: toKg(bodyweight), experience, unit, arenaOpen: false },
       baseline,
     );
     if (res.newAchievements.length > 0) setResult(res);

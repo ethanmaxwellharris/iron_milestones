@@ -73,6 +73,7 @@ export async function pushProfile(profile: Profile, xp: number): Promise<void> {
       bodyweight_kg: profile.bodyweightKg,
       experience: profile.experience,
       unit: profile.unit,
+      arena_open: profile.arenaOpen ?? false,
       xp,
       updated_at: new Date().toISOString(),
     }).eq("id", uid);
@@ -184,6 +185,7 @@ export async function hydrateFromCloud(): Promise<{
             bodyweightKg: p.bodyweight_kg ? Number(p.bodyweight_kg) : null,
             experience: p.experience ?? "novice",
             unit: p.unit === "lb" ? "lb" : "kg",
+            arenaOpen: Boolean(p.arena_open),
           }
         : {},
       xp: p?.xp ?? 0,

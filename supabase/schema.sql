@@ -13,15 +13,23 @@ create table if not exists public.profiles (
   experience    text check (experience in ('novice', 'intermediate', 'advanced', 'elite')),
   unit          text not null default 'kg' check (unit in ('kg', 'lb')),
   xp            integer not null default 0,
+  -- Opt-in: listed in the Arena roster and challengeable to duels.
+  arena_open    boolean not null default false,
   created_at    timestamptz not null default now(),
   updated_at    timestamptz not null default now()
 );
+
+alter table public.profiles
+  add column if not exists arena_open boolean not null default false;
 
 alter table public.profiles enable row level security;
 
 drop policy if exists "Users can view own profile" on public.profiles;
 create policy "Users can view own profile"
   on public.profiles for select using (auth.uid() = id);
+drop policy if exists "Arena-open profiles are visible to lifters" on public.profiles;
+create policy "Arena-open profiles are visible to lifters"
+  on public.profiles for select using (arena_open = true and auth.uid() is not null);
 drop policy if exists "Users can insert own profile" on public.profiles;
 create policy "Users can insert own profile"
   on public.profiles for insert with check (auth.uid() = id);
@@ -207,6 +215,44 @@ create policy "Users own their orders (insert)"
 drop policy if exists "Users own their orders (update)" on public.user_orders;
 create policy "Users own their orders (update)"
   on public.user_orders for update using (auth.uid() = user_id);
+
+-- ── Arena Duels ──────────────────────────────────────────────────────────────
+-- Head-to-head competition between two signed-up lifters over a time window,
+-- scored on an objective metric (volume kg / sets / training days). Each
+-- participant reports their own score from their own logged workouts (v1 is
+-- honor-system, like a gym bet). Winner takes the XP wager.
+create table if not exists public.duels (
+  id               uuid primary key default gen_random_uuid(),
+  challenger_id    uuid not null references auth.users (id) on delete cascade,
+  opponent_id      uuid not null references auth.users (id) on delete cascade,
+  metric           text not null check (metric in ('volume', 'sets', 'trained-days')),
+  status           text not null default 'pending'
+                     check (status in ('pending', 'active', 'declined', 'completed', 'cancelled')),
+  wager_xp         integer not null default 250 check (wager_xp between 50 and 1000),
+  duration_days    integer not null default 7 check (duration_days between 3 and 30),
+  starts_at        timestamptz,
+  ends_at          timestamptz,
+  challenger_score numeric not null default 0,
+  opponent_score   numeric not null default 0,
+  winner_id        uuid references auth.users (id),
+  created_at       timestamptz not null default now(),
+  check (challenger_id <> opponent_id)
+);
+
+create index if not exists duels_challenger_idx on public.duels (challenger_id, status);
+create index if not exists duels_opponent_idx on public.duels (opponent_id, status);
+
+alter table public.duels enable row level security;
+
+drop policy if exists "Participants read their duels" on public.duels;
+create policy "Participants read their duels"
+  on public.duels for select using (auth.uid() in (challenger_id, opponent_id));
+drop policy if exists "Challengers declare duels" on public.duels;
+create policy "Challengers declare duels"
+  on public.duels for insert with check (auth.uid() = challenger_id);
+drop policy if exists "Participants update their duels" on public.duels;
+create policy "Participants update their duels"
+  on public.duels for update using (auth.uid() in (challenger_id, opponent_id));
 
 -- ── Storage: avatars & lift photos ──────────────────────────────────────────
 insert into storage.buckets (id, name, public)

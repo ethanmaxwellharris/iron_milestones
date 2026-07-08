@@ -8,7 +8,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "seed:achievements": "tsx scripts/seed-achievements.ts"
+    "seed:achievements": "tsx scripts/seed-achievements.ts",
+    "arena:warden": "tsx scripts/arena-warden.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.5.2",

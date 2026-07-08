@@ -38,6 +38,8 @@ export interface Profile {
   bodyweightKg: number | null;
   experience: "novice" | "intermediate" | "advanced" | "elite";
   unit: "kg" | "lb";
+  /** Opt-in: listed on the Arena roster and challengeable to duels. */
+  arenaOpen: boolean;
 }
 
 export interface LogResult {
@@ -65,11 +67,14 @@ interface IronState {
   xp: number;
   customLifts: CustomLift[];
   orderStates: Record<string, UserOrderState>;
+  /** duel id → XP already granted for it (settlement happens exactly once). */
+  duelXp: Record<string, number>;
 
   completeOnboarding: (profile: Profile, baseline: LoggedSet[]) => LogResult;
   updateProfile: (patch: Partial<Profile>) => void;
   logWorkout: (w: Omit<Workout, "id">) => LogResult;
   addCustomLift: (name: string) => CustomLift;
+  awardDuelXp: (duelId: string, amount: number) => number;
   claimOrder: (order: GeneratedOrder) => void;
   setManualOrderProgress: (order: GeneratedOrder, requirementIndex: number, value: number) => void;
   completeOrder: (order: GeneratedOrder) => number;
@@ -88,6 +93,7 @@ const DEFAULT_PROFILE: Profile = {
   bodyweightKg: null,
   experience: "novice",
   unit: "kg",
+  arenaOpen: false,
 };
 
 /** Award unlocks + XP for the state after a mutation. Pure helper. */
@@ -131,6 +137,16 @@ export const useIronStore = create<IronState>()(
       xp: 0,
       customLifts: [],
       orderStates: {},
+      duelXp: {},
+
+      awardDuelXp: (duelId, amount) => {
+        const state = get();
+        if (duelId in state.duelXp) return 0;
+        const xp = state.xp + amount;
+        set({ duelXp: { ...state.duelXp, [duelId]: amount }, xp });
+        void pushProfile(state.profile, xp);
+        return amount;
+      },
 
       completeOnboarding: (profile, baseline) => {
         const state = get();
@@ -276,6 +292,7 @@ export const useIronStore = create<IronState>()(
           xp: 0,
           customLifts: [],
           orderStates: {},
+          duelXp: {},
         }),
     }),
     {

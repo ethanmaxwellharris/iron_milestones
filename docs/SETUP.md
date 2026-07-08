@@ -55,6 +55,28 @@ Email + password auth works with no extra setup.
    - Site URL: `https://your-app.vercel.app`
    - Redirect URLs: `https://your-app.vercel.app/**` and `http://localhost:3000/**`
 
+## Arena duels & the Forge Warden
+
+Duels are head-to-head contests between two signed-up lifters on an objective metric
+(volume / sets / training days) over a set window. Requirements:
+
+- The latest `supabase/schema.sql` applied (adds `profiles.arena_open` and the `duels` table).
+- Both lifters signed in and opted into the Arena rolls (a toggle on `/arena`).
+
+Scores are self-reported from each lifter's own ledger when they visit the Arena (v1 is
+honor-system, like a gym bet). The winner takes the XP wager; the loser collects a small
+consolation; draws split the wager.
+
+**Testing without real users:** seed the house opponent —
+
+```bash
+npm run arena:warden
+```
+
+This creates "The Forge Warden" (an arena-open test account) using the service-role key. Throw a
+gauntlet at the Warden from `/arena`, then re-run the command to make the Warden accept and post
+scores; each run plays one Warden turn.
+
 ## Expanding the codex
 
 Achievements are pure data in [`src/lib/codex/achievements.ts`](../src/lib/codex/achievements.ts):
