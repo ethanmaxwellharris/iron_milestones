@@ -42,10 +42,10 @@ export default function ArenaPage() {
       <main className="mx-auto max-w-6xl space-y-8 px-4 py-6 pb-24 md:pb-6">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <p className="text-[11px] uppercase tracking-[0.3em] text-gold-dim">Ancillary training board</p>
+            <p className="text-[11px] uppercase tracking-[0.3em] text-gold-dim">Posted at the forge gate, each dawn</p>
             <h1 className="plate-heading text-3xl sm:text-4xl">Forge Orders</h1>
             <p className="mt-1 max-w-2xl text-xs leading-relaxed text-parchment-400">
-              Useful training guidance dressed in ironwork: claim small orders when motivation is thin, or seal a harder contract when the week has teeth.
+              The guild posts its work at first light. Claim a small order when the fire burns low, or seal a contract when the week has teeth.
             </p>
           </div>
           <div className="panel flex items-center gap-3 py-3">
@@ -58,8 +58,12 @@ export default function ArenaPage() {
         </div>
 
         <section className="grid gap-3 sm:grid-cols-3">
-          <Stat label="Weekly Work" value={arenaScore.toLocaleString()} hint="optional arena score" accent />
-          <Stat label="This Week" value={`${campaign.weekly.trainedDays} days`} hint={`${campaign.weekly.setCount} sets logged`} />
+          <Stat label="Arena Score" value={arenaScore.toLocaleString()} hint="this week's standing" accent />
+          <Stat
+            label="This Week"
+            value={`${campaign.weekly.trainedDays} day${campaign.weekly.trainedDays === 1 ? "" : "s"}`}
+            hint={`${campaign.weekly.setCount} set${campaign.weekly.setCount === 1 ? "" : "s"} logged`}
+          />
           <Stat label="S/B/D Total" value={formatWeight(totalKg, profile.unit)} hint={`${stats.streakWeeks} week streak`} />
         </section>
 
@@ -104,7 +108,8 @@ export default function ArenaPage() {
               <Medal size={12} /> Charter
             </p>
             <p className="font-serif text-sm leading-relaxed">
-              Forge Orders are not a replacement for the program. They are small handles for days when the will is slippery: log, move, practice, write, return.
+              An order is not the program — it is a handle for the days when the will is slippery.
+              Log, move, practice, write, return. The guild asks nothing foolish and pays in full.
             </p>
           </div>
 
@@ -112,12 +117,12 @@ export default function ArenaPage() {
             <p className="mb-1 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-gold-dim">
               <Shield size={12} /> Optional Competition
             </p>
-            <h2 className="plate-heading text-lg">Arena Ledger — Sparring Ghosts</h2>
+            <h2 className="plate-heading text-lg">The Sparring Ghosts</h2>
             <p className="mt-1 text-xs leading-relaxed text-parchment-400">
-              Competition remains here for lifters who want a little pressure. The rivals below are{" "}
-              <strong className="text-parchment-200">simulated sparring partners</strong> paced off your
-              own weekly score — real head-to-head leaderboards may come later. Ignore this entirely
-              and the orders still work.
+              For lifters who train better with footsteps behind them. These rivals are{" "}
+              <strong className="text-parchment-200">ghosts — simulated partners paced off your own
+              weekly score</strong>, not living lifters. Spar with them or walk past; the orders pay
+              either way.
             </p>
             <div className="mt-4 space-y-2">
               {leaderboard(arenaScore, stats.streakWeeks).map((rival, index) => (
@@ -146,7 +151,7 @@ export default function ArenaPage() {
             </div>
             <div className="mt-4 flex items-center justify-end gap-2">
               <span className="text-[10px] uppercase tracking-widest text-parchment-500">
-                Duels against real lifters — future campaign
+                Duels against the living — a future campaign
               </span>
               <button type="button" className="btn-ghost cursor-not-allowed text-[10px] opacity-50" disabled>
                 <Swords size={13} /> Draft Duel
