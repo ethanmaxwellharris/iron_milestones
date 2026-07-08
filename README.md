@@ -56,20 +56,3 @@ Forge Orders and Iron Contracts follow the same pattern: canonical definitions l
 `public.user_orders`.
 
 ## Try it
-
-```bash
-npm install && npm run dev
-```
-
-That's the whole quick start — no accounts, no keys, data lives in your browser.
-
-For Supabase accounts/sync, Google OAuth, Vercel deployment, seeding the codex into Postgres, and
-how to add achievements, see **[docs/SETUP.md](docs/SETUP.md)**.
-
-If you are enabling Forge Orders cloud sync, apply the latest `supabase/schema.sql` so the
-`public.user_orders` table and RLS policies exist. For implementation details, see
-**[docs/FORGE_ORDERS_HANDOFF.md](docs/FORGE_ORDERS_HANDOFF.md)**.
-
----
-
-*"Milo did not lift the bull. He lifted the calf, every day, and the bull happened."*
