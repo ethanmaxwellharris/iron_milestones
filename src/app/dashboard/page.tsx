@@ -8,8 +8,10 @@ import { Panel, SectionTitle, Stat } from "@/components/ui";
 import { RankBadge, XpBar } from "@/components/xp";
 import { AchievementCard } from "@/components/achievement";
 import { LiftProgressChart } from "@/components/charts";
+import { OrderCard, OrdersLink } from "@/components/orders";
 import { useIronStore, selectStats } from "@/lib/store";
 import { evaluateCodex } from "@/lib/codex/engine";
+import { activeOrders, getGeneratedOrders } from "@/lib/orders";
 import { dailyQuote, weeklyChallenge } from "@/lib/motivation";
 import { formatWeight } from "@/lib/oneRm";
 import { liftName } from "@/lib/utils";
@@ -17,7 +19,7 @@ import { Flame, Quote, Swords } from "lucide-react";
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { hydrated, cloudReady, onboarded, profile, workouts, unlocked, xp } = useIronStore();
+  const { hydrated, cloudReady, onboarded, profile, workouts, unlocked, xp, orderStates } = useIronStore();
 
   // Wait for both localStorage hydration AND the initial cloud check before
   // deciding the user is new — otherwise a signed-in user on a fresh device
@@ -49,6 +51,13 @@ export default function DashboardPage() {
 
   const quote = dailyQuote();
   const challenge = weeklyChallenge();
+  const todayOrders = useMemo(
+    () =>
+      activeOrders(getGeneratedOrders(profile, workouts), orderStates, workouts)
+        .filter((order) => order.order.definition.kind === "daily")
+        .slice(0, 2),
+    [orderStates, profile, workouts],
+  );
 
   if (!hydrated || !cloudReady || !onboarded) {
     return (
@@ -81,6 +90,20 @@ export default function DashboardPage() {
             View the rank ladder →
           </Link>
         </p>
+
+        <section>
+          <div className="mb-4 flex items-end justify-between gap-4">
+            <SectionTitle sub="Useful work, issued fresh each dawn" className="mb-0">
+              Today's Forge Orders
+            </SectionTitle>
+            <OrdersLink />
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            {todayOrders.map((order) => (
+              <OrderCard key={`${order.order.periodKey}-${order.order.definition.id}`} progress={order} compact />
+            ))}
+          </div>
+        </section>
 
         {/* PR plates */}
         <section>
