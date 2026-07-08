@@ -30,6 +30,12 @@ export default function LandingPage() {
           Open the Codex
         </Link>
       </div>
+      <p className="mt-4 text-xs text-parchment-400">
+        Already forged an account?{" "}
+        <Link href="/login" className="font-semibold text-gold-bright underline-offset-2 hover:underline">
+          Sign in
+        </Link>
+      </p>
 
       <div className="mt-14 grid w-full grid-cols-1 gap-4 sm:grid-cols-3">
         {[

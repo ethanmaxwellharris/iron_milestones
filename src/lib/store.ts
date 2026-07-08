@@ -52,6 +52,9 @@ export interface CustomLift {
 interface IronState {
   hydrated: boolean;
   setHydrated: (v: boolean) => void;
+  /** True once the initial cloud check (signed in or not) has completed. */
+  cloudReady: boolean;
+  setCloudReady: (v: boolean) => void;
   onboarded: boolean;
   profile: Profile;
   workouts: Workout[];
@@ -112,6 +115,8 @@ export const useIronStore = create<IronState>()(
     (set, get) => ({
       hydrated: false,
       setHydrated: (v) => set({ hydrated: v }),
+      cloudReady: false,
+      setCloudReady: (v) => set({ cloudReady: v }),
       onboarded: false,
       profile: DEFAULT_PROFILE,
       workouts: [],
@@ -211,7 +216,7 @@ export const useIronStore = create<IronState>()(
       onRehydrateStorage: () => (state) => {
         state?.setHydrated(true);
       },
-      partialize: ({ hydrated: _hydrated, ...rest }) => rest as IronState,
+      partialize: ({ hydrated: _h, cloudReady: _c, ...rest }) => rest as IronState,
     },
   ),
 );

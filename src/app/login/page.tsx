@@ -10,6 +10,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { SectionTitle } from "@/components/ui";
 import { getSupabase, isSupabaseConfigured } from "@/lib/supabase";
+import { fullSync } from "@/components/auth-listener";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -47,6 +48,10 @@ export default function LoginPage() {
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
+        // Pull + merge the cloud ledger BEFORE navigating, so the dashboard
+        // never mistakes an existing account for a first-time visitor.
+        setMessage("Retrieving your ledger…");
+        await fullSync();
         router.push("/dashboard");
       }
     } catch (err) {

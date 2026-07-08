@@ -17,11 +17,14 @@ import { Flame, Quote, Swords } from "lucide-react";
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { hydrated, onboarded, profile, workouts, unlocked, xp } = useIronStore();
+  const { hydrated, cloudReady, onboarded, profile, workouts, unlocked, xp } = useIronStore();
 
+  // Wait for both localStorage hydration AND the initial cloud check before
+  // deciding the user is new — otherwise a signed-in user on a fresh device
+  // gets bounced to onboarding while their ledger is still downloading.
   useEffect(() => {
-    if (hydrated && !onboarded) router.replace("/onboarding");
-  }, [hydrated, onboarded, router]);
+    if (hydrated && cloudReady && !onboarded) router.replace("/onboarding");
+  }, [hydrated, cloudReady, onboarded, router]);
 
   const stats = useMemo(() => selectStats({ workouts, profile }), [workouts, profile]);
   const codex = useMemo(() => evaluateCodex(stats), [stats]);
@@ -47,7 +50,7 @@ export default function DashboardPage() {
   const quote = dailyQuote();
   const challenge = weeklyChallenge();
 
-  if (!hydrated || !onboarded) {
+  if (!hydrated || !cloudReady || !onboarded) {
     return (
       <main className="flex min-h-dvh items-center justify-center text-sm uppercase tracking-[0.3em] text-parchment-500">
         Consulting the codex…

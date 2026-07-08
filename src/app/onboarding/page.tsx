@@ -6,6 +6,7 @@
  * engine immediately grants every page the lifter has already earned.
  */
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useIronStore, type LogResult, type Profile } from "@/lib/store";
@@ -109,6 +110,13 @@ export default function OnboardingPage() {
         </div>
 
         <button type="submit" className="btn-gold w-full">Take the Oath</button>
+
+        <p className="text-center text-xs text-parchment-400">
+          Already sworn in on another device?{" "}
+          <Link href="/login" className="font-semibold text-gold-bright underline-offset-2 hover:underline">
+            Sign in to retrieve your ledger
+          </Link>
+        </p>
       </form>
 
       {result && (

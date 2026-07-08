@@ -30,6 +30,8 @@ export async function pushWorkout(w: Workout): Promise<void> {
       notes: w.notes ?? null,
     });
     if (error) throw error;
+    // Idempotent re-push: replace this workout's sets rather than appending.
+    await supabase.from("workout_sets").delete().eq("workout_id", w.id).eq("user_id", uid);
     const rows = w.sets.map((s, i) => ({
       workout_id: w.id,
       user_id: uid,
@@ -75,6 +77,23 @@ export async function pushProfile(profile: Profile, xp: number): Promise<void> {
   } catch (e) {
     console.warn("[iron] cloud sync of profile failed:", e);
   }
+}
+
+/**
+ * Upload the full local ledger. Called after sign-in merge so history that
+ * was logged before the account existed (offline-first) reaches the cloud.
+ */
+export async function pushAllLocal(
+  workouts: Workout[],
+  profile: Profile,
+  xp: number,
+  unlockedIds: string[],
+): Promise<void> {
+  const uid = await userId();
+  if (!uid) return;
+  for (const w of workouts) await pushWorkout(w);
+  await pushUnlocks(unlockedIds);
+  await pushProfile(profile, xp);
 }
 
 /** Pull cloud state after sign-in. Returns null when unavailable. */
