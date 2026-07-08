@@ -112,9 +112,12 @@ export default function ArenaPage() {
             <p className="mb-1 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-gold-dim">
               <Shield size={12} /> Optional Competition
             </p>
-            <h2 className="plate-heading text-lg">Arena Ledger</h2>
+            <h2 className="plate-heading text-lg">Arena Ledger — Sparring Ghosts</h2>
             <p className="mt-1 text-xs leading-relaxed text-parchment-400">
-              Competition remains here for lifters who want a little pressure. Ignore it entirely and the orders still work.
+              Competition remains here for lifters who want a little pressure. The rivals below are{" "}
+              <strong className="text-parchment-200">simulated sparring partners</strong> paced off your
+              own weekly score — real head-to-head leaderboards may come later. Ignore this entirely
+              and the orders still work.
             </p>
             <div className="mt-4 space-y-2">
               {leaderboard(arenaScore, stats.streakWeeks).map((rival, index) => (
@@ -141,8 +144,11 @@ export default function ArenaPage() {
                 </div>
               ))}
             </div>
-            <div className="mt-4 text-right">
-              <button type="button" className="btn-ghost text-[10px]">
+            <div className="mt-4 flex items-center justify-end gap-2">
+              <span className="text-[10px] uppercase tracking-widest text-parchment-500">
+                Duels against real lifters — future campaign
+              </span>
+              <button type="button" className="btn-ghost cursor-not-allowed text-[10px] opacity-50" disabled>
                 <Swords size={13} /> Draft Duel
               </button>
             </div>
