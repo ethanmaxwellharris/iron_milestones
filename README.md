@@ -26,8 +26,10 @@ antique gold on deep military green, beveled 90s chrome, CRT scanlines, engraved
   contracts that can be claimed, progressed, and completed for XP. They are meant to keep users
   engaged with useful work — logging, consistency, rows, mobility, notes, volume — while leaving
   competition optional.
-- **The Arena** — the full orders board, Iron Contracts docket, and a secondary optional
-  competition ledger for users who want pressure without making rivalry the core app loop.
+- **The Arena** — real head-to-head duels: challenge another signed-up lifter to a multi-day
+  trial (volume moved, sets logged, or training days), watch live scores, and take the XP wager.
+  The roster is opt-in, the orders board keeps solo work flowing, and simulated sparring ghosts
+  fill the gap while the halls fill.
 - **Your data, everywhere and nowhere** — offline-first in the browser with zero configuration;
   optional Supabase accounts with full two-way sync across devices; one-click JSON/CSV export.
   Displays in kg or lb, your choice.

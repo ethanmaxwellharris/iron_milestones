@@ -2,13 +2,14 @@
 
 import { useMemo, useState } from "react";
 import { AppNav } from "@/components/nav";
-import { Panel, SectionTitle, Stat } from "@/components/ui";
+import { Panel, Stat } from "@/components/ui";
 import { OrderCard } from "@/components/orders";
+import { DuelingGrounds } from "@/components/duels";
 import { useIronStore, selectStats, type Workout } from "@/lib/store";
 import { activeOrders, getGeneratedOrders } from "@/lib/orders";
 import { formatWeight } from "@/lib/oneRm";
 import { cn } from "@/lib/utils";
-import { Flame, Medal, Shield, Swords, Trophy } from "lucide-react";
+import { Flame, Medal, Shield } from "lucide-react";
 
 type BoardTab = "daily" | "weekly" | "contract";
 
@@ -42,10 +43,11 @@ export default function ArenaPage() {
       <main className="mx-auto max-w-6xl space-y-8 px-4 py-6 pb-24 md:pb-6">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <p className="text-[11px] uppercase tracking-[0.3em] text-gold-dim">Posted at the forge gate, each dawn</p>
-            <h1 className="plate-heading text-3xl sm:text-4xl">Forge Orders</h1>
+            <p className="text-[11px] uppercase tracking-[0.3em] text-gold-dim">Where lifters are named, not numbered</p>
+            <h1 className="plate-heading text-3xl sm:text-4xl">The Arena</h1>
             <p className="mt-1 max-w-2xl text-xs leading-relaxed text-parchment-400">
-              The guild posts its work at first light. Claim a small order when the fire burns low, or seal a contract when the week has teeth.
+              Duel another lifter over days of honest work, take orders from the guild board when the
+              fire burns low, or seal a contract when the week has teeth.
             </p>
           </div>
           <div className="panel flex items-center gap-3 py-3">
@@ -66,6 +68,8 @@ export default function ArenaPage() {
           />
           <Stat label="S/B/D Total" value={formatWeight(totalKg, profile.unit)} hint={`${stats.streakWeeks} week streak`} />
         </section>
+
+        <DuelingGrounds />
 
         <Panel>
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -115,14 +119,13 @@ export default function ArenaPage() {
 
           <Panel>
             <p className="mb-1 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-gold-dim">
-              <Shield size={12} /> Optional Competition
+              <Shield size={12} /> Practice Bouts
             </p>
             <h2 className="plate-heading text-lg">The Sparring Ghosts</h2>
             <p className="mt-1 text-xs leading-relaxed text-parchment-400">
-              For lifters who train better with footsteps behind them. These rivals are{" "}
-              <strong className="text-parchment-200">ghosts — simulated partners paced off your own
-              weekly score</strong>, not living lifters. Spar with them or walk past; the orders pay
-              either way.
+              While the rolls fill with living rivals, the ghosts keep your footwork honest. They are{" "}
+              <strong className="text-parchment-200">echoes paced off your own weekly score</strong> —
+              beat them between duels, or walk past.
             </p>
             <div className="mt-4 space-y-2">
               {leaderboard(arenaScore, stats.streakWeeks).map((rival, index) => (
@@ -149,14 +152,9 @@ export default function ArenaPage() {
                 </div>
               ))}
             </div>
-            <div className="mt-4 flex items-center justify-end gap-2">
-              <span className="text-[10px] uppercase tracking-widest text-parchment-500">
-                Duels against the living — a future campaign
-              </span>
-              <button type="button" className="btn-ghost cursor-not-allowed text-[10px] opacity-50" disabled>
-                <Swords size={13} /> Draft Duel
-              </button>
-            </div>
+            <p className="mt-4 text-right text-[10px] uppercase tracking-widest text-parchment-500">
+              Ready for the living? The Dueling Grounds await above.
+            </p>
           </Panel>
         </div>
       </main>
