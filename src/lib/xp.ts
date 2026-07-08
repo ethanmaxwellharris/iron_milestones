@@ -17,15 +17,24 @@ export function workoutXp(setCount: number): number {
 /** XP for each new personal record within a session. */
 export const PR_XP = 40;
 
+export const MAX_LEVEL = 99;
+
 /** Cost to go from `level` to `level + 1`. Gentle early, steep later. */
-function nextLevelCost(level: number): number {
+export function nextLevelCost(level: number): number {
   return 100 + (level - 1) * 60;
+}
+
+/** Total XP required to reach `level` from zero. */
+export function cumulativeXpForLevel(level: number): number {
+  let sum = 0;
+  for (let l = 1; l < level; l++) sum += nextLevelCost(l);
+  return sum;
 }
 
 export function levelFromXp(xp: number): { level: number; into: number; needed: number } {
   let level = 1;
   let remaining = xp;
-  while (remaining >= nextLevelCost(level) && level < 99) {
+  while (remaining >= nextLevelCost(level) && level < MAX_LEVEL) {
     remaining -= nextLevelCost(level);
     level += 1;
   }

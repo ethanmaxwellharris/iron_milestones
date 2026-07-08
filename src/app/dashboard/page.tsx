@@ -67,13 +67,20 @@ export default function DashboardPage() {
             <p className="text-[11px] uppercase tracking-[0.3em] text-gold-dim">
               {profile.name ? `Welcome back, ${profile.name}` : "Welcome back, lifter"}
             </p>
-            <RankBadge xp={xp} />
+            <Link href="/ranks" title="View the rank ladder">
+              <RankBadge xp={xp} />
+            </Link>
           </div>
           <Link href="/log" className="btn-gold">
             + Log a Session
           </Link>
         </div>
         <XpBar xp={xp} />
+        <p className="-mt-6 text-right">
+          <Link href="/ranks" className="text-[11px] uppercase tracking-widest text-gold-dim hover:text-gold-bright">
+            View the rank ladder →
+          </Link>
+        </p>
 
         {/* PR plates */}
         <section>

@@ -1,121 +1,56 @@
 # ⚒️ Iron Milestones — The Codex of Iron
 
 A gamified strength-training tracker that turns squat, bench, and deadlift progress into an epic
-journey through the true history of the iron game. Log your lifts; unlock the deeds of Reg Park,
-Doug Hepburn, Ed Coan, Hermann Goerner, Jón Páll Sigmarsson, and the other old gods of the platform.
+journey through the true history of the iron game. Log your lifts and unlock the recorded deeds of
+Reg Park, Doug Hepburn, Ed Coan, Hermann Goerner, Katie Sandwina, Jón Páll Sigmarsson, and the
+other old gods of the platform.
 
-**Aesthetic:** Vitruvian Man meets Encarta '96 — Renaissance anatomical plates, parchment, antique
-gold, deep military greens, beveled 90s chrome, and CRT scanlines.
+**The look:** Vitruvian Man meets Encarta '96 — Renaissance anatomical plates, parchment and
+antique gold on deep military green, beveled 90s chrome, CRT scanlines, engraved medallions.
 
-## Features
+## What it does
 
-- **Workout logger** — mobile-first quick entry with live Epley e1RM estimates, RPE, bodyweight,
-  notes, and custom lifts. PRs are detected automatically.
-- **The Codex of Iron** — **142 achievements** across 11 chapters (Squat, Bench, Deadlift, Press,
-  Total Dominance, Pound-for-Pound, Repetition Feats, Dedication, the Golden Era, Mythic…), each
-  with historic lore, rarity (Common → Legendary), tier, engraved medallion icon, XP reward, and
-  per-requirement progress bars.
-- **Hall of Iron** — your estimated 1RMs measured against the recorded feats of 16 legends.
-- **Gamification** — XP, 99 levels, nine Iron Ranks (Iron Novice → Mythic Colossus), weekly
-  training streaks, daily quotes, and weekly challenges.
-- **Charts** — retro-styled cumulative e1RM progress lines (Recharts).
-- **Offline-first** — with no configuration the app runs in **Forge Offline** mode
-  (localStorage). Add Supabase credentials to enable accounts + cloud sync.
-- **Data export** — one-click JSON (full state) and CSV (all sets).
-- **PWA-friendly** — manifest, theme color, mobile bottom nav, safe-area padding.
+- **The Codex of Iron** — 142 achievements across 11 chapters (the lift ladders, Total Dominance,
+  Pound-for-Pound, Repetition Feats, Dedication, the Golden Era, Mythic). Each page carries
+  historic lore, a rarity from Common to Legendary, an XP reward, and live progress bars. Unlocks
+  are ceremonies, not toasts.
+- **Fast workout logging** — mobile-first entry with live Epley 1RM estimates, RPE, bodyweight,
+  notes, custom lifts, and automatic PR detection.
+- **A real progression system** — XP for sessions, PRs, and unlocks; 99 levels; nine Iron Ranks
+  from *Iron Novice* to *Mythic Colossus*, each with its motto. The full ladder lives on the
+  Ranks page.
+- **The Hall of Iron** — your estimated 1RMs measured plaque-by-plaque against sixteen legends.
+- **The rhythm of training** — weekly streaks, a daily quote from a 64-entry roster, and a weekly
+  challenge (same for everyone — suffer together).
+- **Your data, everywhere and nowhere** — offline-first in the browser with zero configuration;
+  optional Supabase accounts with full two-way sync across devices; one-click JSON/CSV export.
+  Displays in kg or lb, your choice.
 
-## Tech stack
+## The journey
 
-Next.js 14 (App Router) · TypeScript · Tailwind CSS · Zustand (persisted) · Supabase
-(Auth + Postgres + RLS) · Recharts · Lucide icons · date-handling in plain ISO strings.
+1. **Take the oath** — onboarding records your name, bodyweight, and current bests; the codex
+   immediately honors every page you've already earned.
+2. **Log sessions** — each one writes to the ledger, awards XP, and checks all 142 pages.
+3. **Chase the pages** — the codex sorts locked achievements by how close you are; the dashboard
+   surfaces your next unlocks.
+4. **Climb the ladder** — levels, ranks, streaks, and the Hall of Iron give the long arc.
 
-## Quick start (offline mode — zero config)
+## Tech
+
+Next.js 14 (App Router) · TypeScript · Tailwind CSS · Zustand · Supabase (Auth + Postgres + RLS)
+· Recharts · Lucide. The achievement system is pure data + a pure evaluation engine — adding an
+achievement is adding one object to one file.
+
+## Try it
 
 ```bash
-npm install
-npm run dev
+npm install && npm run dev
 ```
 
-Open http://localhost:3000. Everything works; data lives in your browser.
+That's the whole quick start — no accounts, no keys, data lives in your browser.
 
-## Full setup with Supabase
-
-1. Create a project at [supabase.com](https://supabase.com).
-2. In the SQL editor, run the entire contents of [`supabase/schema.sql`](supabase/schema.sql)
-   (tables, RLS policies, signup trigger, storage bucket).
-3. Copy `.env.example` → `.env.local` and fill in:
-   - `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` (Project Settings → API)
-   - `SUPABASE_SERVICE_ROLE_KEY` (only needed for seeding; never ship to the browser)
-4. Mirror the codex into the database (optional but recommended — enables SQL analytics):
-   ```bash
-   npm run seed:achievements
-   ```
-5. (Optional) Enable the Google provider under Authentication → Providers for OAuth sign-in.
-6. `npm run dev` — sign up, and your ledger syncs on every save.
-
-**Sync model:** the browser store is the source of truth for the UI (offline-first). Mutations
-write through to Supabase when signed in; on sign-in, cloud state is pulled and merged (cloud wins,
-local-only sessions are kept). RLS restricts every row to its owner.
-
-## Deploy to Vercel
-
-1. Push this repo to GitHub.
-2. [vercel.com/new](https://vercel.com/new) → import the repo (framework auto-detects Next.js).
-3. Add the two `NEXT_PUBLIC_SUPABASE_*` env vars in Project → Settings → Environment Variables.
-4. Deploy. In Supabase, add your Vercel URL to Authentication → URL Configuration
-   (Site URL + redirect URLs) so OAuth and email links return correctly.
-
-## Project structure
-
-```
-supabase/schema.sql          # Tables + RLS + signup trigger + storage
-scripts/seed-achievements.ts # Mirrors the codex into the achievements table
-src/lib/codex/
-  types.ts                   # Achievement, Requirement, LifterStats types
-  achievements.ts            # ★ THE CODEX — 142 data-driven entries
-  engine.ts                  # Pure evaluation: stats → progress/unlocks
-src/lib/
-  store.ts                   # Zustand persisted store; unlock/XP settlement
-  sync.ts                    # Best-effort Supabase write-through + hydrate
-  supabase.ts                # Browser client (null in offline mode)
-  oneRm.ts                   # Epley/Brzycki, kg↔lb, formatting
-  xp.ts                      # XP economy, levels, Iron Ranks
-  legends.ts                 # Hall of Iron reference data
-  motivation.ts              # Daily quotes + weekly challenges
-src/components/              # Nav, codex cards, medallions, charts, dialogs…
-src/app/                     # /, /onboarding, /dashboard, /log, /codex,
-                             # /hall, /history, /settings, /login
-```
-
-## Expanding the codex
-
-Everything is data-driven. To add achievements, edit
-[`src/lib/codex/achievements.ts`](src/lib/codex/achievements.ts):
-
-```ts
-{
-  id: "gold-my-new-legend",         // stable forever — unlocks key on it
-  name: "The New Page",
-  category: "golden-era",            // any Category from types.ts
-  rarity: "epic",                    // tier + XP derive from rarity
-  lifter: "Historic Name", era: "1962",
-  lore: "One to three sentences of grimoire flavor.",
-  iconDescription: "Art direction for a woodcut/engraving icon.",
-  requirements: [lift("squat", 250), workouts(50)],  // ANDed helpers
-},
-```
-
-Helpers: `lift`, `total`, `bw` (bodyweight multiple), `totalBw`, `reps` (weight×reps single set),
-`workouts`, `streak` (weeks), `prs`. New requirement *types* go in `types.ts` + one `case` in
-`engine.ts` — nothing else changes. Re-run `npm run seed:achievements` to mirror to Supabase.
-
-## Scripts
-
-| Command | Purpose |
-| --- | --- |
-| `npm run dev` | Dev server |
-| `npm run build` / `start` | Production build / serve |
-| `npm run seed:achievements` | Upsert the codex into Supabase |
+For Supabase accounts/sync, Google OAuth, Vercel deployment, seeding the codex into Postgres, and
+how to add achievements, see **[docs/SETUP.md](docs/SETUP.md)**.
 
 ---
 
