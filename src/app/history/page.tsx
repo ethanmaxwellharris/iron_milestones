@@ -13,7 +13,7 @@ import { estimate1Rm, formatWeight } from "@/lib/oneRm";
 import { LIFT_NAMES, liftName } from "@/lib/utils";
 
 export default function HistoryPage() {
-  const { workouts, profile, customLifts } = useIronStore();
+  const { workouts, profile, customLifts, deleteWorkout } = useIronStore();
   const [focus, setFocus] = useState<string>("big3");
 
   const liftOptions = useMemo(
@@ -65,9 +65,22 @@ export default function HistoryPage() {
                     weekday: "short", year: "numeric", month: "short", day: "numeric",
                   })}
                 </h2>
-                <span className="text-[11px] uppercase tracking-widest text-parchment-500">
-                  {w.sets.length} set{w.sets.length === 1 ? "" : "s"}
-                  {w.bodyweightKg ? ` · bw ${formatWeight(w.bodyweightKg, profile.unit)}` : ""}
+                <span className="flex items-center gap-2 text-[11px] uppercase tracking-widest text-parchment-500">
+                  <span>
+                    {w.sets.length} set{w.sets.length === 1 ? "" : "s"}
+                    {w.bodyweightKg ? ` · bw ${formatWeight(w.bodyweightKg, profile.unit)}` : ""}
+                  </span>
+                  <button
+                    type="button"
+                    className="btn-ghost px-2 py-1 text-[10px]"
+                    onClick={() => {
+                      if (window.confirm("Remove this session from the ledger? This cannot be undone.")) {
+                        deleteWorkout(w.id);
+                      }
+                    }}
+                  >
+                    Remove
+                  </button>
                 </span>
               </header>
               {w.notes && <p className="mt-1 text-xs italic text-parchment-400">“{w.notes}”</p>}

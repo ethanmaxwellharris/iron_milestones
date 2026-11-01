@@ -94,7 +94,7 @@ export default function DashboardPage() {
         <section>
           <div className="mb-4 flex items-end justify-between gap-4">
             <SectionTitle sub="Useful work, issued fresh each dawn" className="mb-0">
-              Today's Forge Orders
+              Today’s Forge Orders
             </SectionTitle>
             <OrdersLink />
           </div>

@@ -283,7 +283,15 @@ export function DuelingGrounds() {
               <span className="flex items-center gap-2">
                 <Hourglass size={13} /> {d.names[d.opponentId] ?? "A lifter"} considers your challenge — {METRIC_LABELS[d.metric].toLowerCase()}, {d.durationDays} days.
               </span>
-              <button className="btn-ghost px-2 py-1 text-[10px]" onClick={async () => { await cancelDuel(d.id); await loadDuels(); }}>
+              <button
+                type="button"
+                className="btn-ghost px-2 py-1 text-[10px]"
+                onClick={async () => {
+                  const err = await cancelDuel(d.id);
+                  if (err) setNotice(err);
+                  await loadDuels();
+                }}
+              >
                 Withdraw
               </button>
             </div>

@@ -5,16 +5,17 @@
  *
  * Model: a duel is declared by a challenger against an arena-open opponent,
  * on an objective metric (volume / sets / training days) over a window.
- * Each participant computes their OWN score from their OWN logged workouts
- * and pushes it to their column (v1 is honor-system, like a gym bet — RLS
- * confines writes to participants). Whoever refreshes after the window ends
- * finalizes the duel; XP settlement happens locally, once, via the store.
+ * Each participant reports their OWN score (honor system for the number).
+ * The server accepts that write only on the caller's column, only while the
+ * duel is active and before ends_at, and computes the winner itself when
+ * the window closes. XP settlement happens locally, once, via the store.
  *
  * Everything here is best-effort and null-safe when Supabase is absent.
  */
 
 import { getSupabase } from "@/lib/supabase";
 import type { Workout } from "@/lib/store";
+import { reportSyncError } from "@/lib/sync-status";
 
 export type DuelMetric = "volume" | "sets" | "trained-days";
 export type DuelStatus = "pending" | "active" | "declined" | "completed" | "cancelled";
@@ -57,6 +58,24 @@ export interface Duel {
 }
 
 export const CONSOLATION_XP = 50;
+
+/** Public label. Shows the unique handle when it differs from the chosen name. */
+export function publicLifterName(
+  displayName: string | null | undefined,
+  username: string | null | undefined,
+): string {
+  const display = displayName?.trim() || "";
+  const handle = username?.trim() || "";
+  if (display && handle && display.toLowerCase() !== handle.toLowerCase()) {
+    return `${display} (@${handle})`;
+  }
+  return display || handle || "A lifter";
+}
+
+/** Strip characters that would break a PostgREST `or` filter. */
+export function sanitizeRosterQuery(query: string): string {
+  return query.trim().replace(/[%_,()"]/g, "");
+}
 
 // ── Scoring ──────────────────────────────────────────────────────────────────
 
@@ -133,18 +152,26 @@ export async function fetchRoster(query: string): Promise<ArenaLifter[]> {
   const uid = await me();
   if (!supabase || !uid) return [];
   let q = supabase
-    .from("profiles")
-    .select("id, username, xp, experience")
-    .eq("arena_open", true)
+    .from("arena_roster")
+    .select("id, username, display_name, xp, experience")
     .neq("id", uid)
     .order("xp", { ascending: false })
     .limit(10);
-  if (query.trim()) q = q.ilike("username", `%${query.trim()}%`);
+  const safe = sanitizeRosterQuery(query);
+  if (safe) {
+    const pattern = `"%${safe}%"`;
+    q = q.or(`username.ilike.${pattern},display_name.ilike.${pattern}`);
+  }
   const { data, error } = await q;
   if (error || !data) return [];
   return data
-    .filter((r) => r.username)
-    .map((r) => ({ id: r.id, username: r.username as string, xp: r.xp ?? 0, experience: r.experience }));
+    .filter((r) => r.username || r.display_name)
+    .map((r) => ({
+      id: r.id as string,
+      username: publicLifterName(r.display_name as string | null, r.username as string | null),
+      xp: (r.xp as number | null) ?? 0,
+      experience: (r.experience as string | null) ?? null,
+    }));
 }
 
 export async function declareDuel(
@@ -156,12 +183,11 @@ export async function declareDuel(
   const supabase = getSupabase();
   const uid = await me();
   if (!supabase || !uid) return "Sign in to declare a duel.";
-  const { error } = await supabase.from("duels").insert({
-    challenger_id: uid,
-    opponent_id: opponentId,
-    metric,
-    duration_days: durationDays,
-    wager_xp: wagerXp,
+  const { error } = await supabase.rpc("create_duel", {
+    p_opponent_id: opponentId,
+    p_metric: metric,
+    p_duration_days: durationDays,
+    p_wager_xp: wagerXp,
   });
   return error ? error.message : null;
 }
@@ -170,21 +196,15 @@ export async function respondToDuel(duel: Duel, accept: boolean): Promise<string
   const supabase = getSupabase();
   const uid = await me();
   if (!supabase || !uid) return "Sign in first.";
-  const patch = accept
-    ? {
-        status: "active",
-        starts_at: new Date().toISOString(),
-        ends_at: new Date(Date.now() + duel.durationDays * 86400000).toISOString(),
-      }
-    : { status: "declined" };
-  const { error } = await supabase.from("duels").update(patch).eq("id", duel.id).eq("status", "pending");
+  const { error } = await supabase.rpc(accept ? "accept_duel" : "decline_duel", { p_duel_id: duel.id });
   return error ? error.message : null;
 }
 
-export async function cancelDuel(duelId: string): Promise<void> {
+export async function cancelDuel(duelId: string): Promise<string | null> {
   const supabase = getSupabase();
-  if (!supabase) return;
-  await supabase.from("duels").update({ status: "cancelled" }).eq("id", duelId).eq("status", "pending");
+  if (!supabase) return null;
+  const { error } = await supabase.rpc("cancel_duel", { p_duel_id: duelId });
+  return error ? error.message : null;
 }
 
 /** Push my current score for an active duel (called on Arena load). */
@@ -192,27 +212,20 @@ export async function pushMyScore(duel: Duel, workouts: Workout[]): Promise<void
   const supabase = getSupabase();
   const uid = await me();
   if (!supabase || !uid || duel.status !== "active" || !duel.startsAt || !duel.endsAt) return;
+  if (Date.now() >= new Date(duel.endsAt).getTime()) return;
   const score = computeDuelScore(workouts, duel.metric, duel.startsAt, duel.endsAt);
-  const column = uid === duel.challengerId ? "challenger_score" : "opponent_score";
-  await supabase.from("duels").update({ [column]: score }).eq("id", duel.id);
+  if (!Number.isFinite(score) || score < 0) return;
+  const { error } = await supabase.rpc("report_duel_score", { p_duel_id: duel.id, p_score: score });
+  if (error) reportSyncError(error);
 }
 
-/** Close out an active duel whose window has ended. Idempotent enough. */
+/** Close out an active duel whose window has ended. The server picks the winner. */
 export async function finalizeIfExpired(duel: Duel): Promise<void> {
   const supabase = getSupabase();
   if (!supabase || duel.status !== "active" || !duel.endsAt) return;
   if (Date.now() < new Date(duel.endsAt).getTime()) return;
-  const winner =
-    duel.challengerScore > duel.opponentScore
-      ? duel.challengerId
-      : duel.opponentScore > duel.challengerScore
-        ? duel.opponentId
-        : null;
-  await supabase
-    .from("duels")
-    .update({ status: "completed", winner_id: winner })
-    .eq("id", duel.id)
-    .eq("status", "active");
+  const { error } = await supabase.rpc("finalize_duel", { p_duel_id: duel.id });
+  if (error) reportSyncError(error);
 }
 
 /** All my duels, newest first, with participant names best-effort resolved. */
@@ -228,10 +241,12 @@ export async function fetchMyDuels(): Promise<Duel[]> {
     .limit(25);
   if (error || !data) return [];
 
-  const ids = [...new Set(data.flatMap((d) => [d.challenger_id, d.opponent_id]))];
+  const ids = [...new Set(data.flatMap((d) => [d.challenger_id as string, d.opponent_id as string]))];
   const names: Record<string, string> = {};
-  const { data: profiles } = await supabase.from("profiles").select("id, username").in("id", ids);
-  for (const p of profiles ?? []) if (p.username) names[p.id] = p.username;
+  const { data: lifters } = await supabase.rpc("duel_lifter_names", { p_ids: ids });
+  for (const p of lifters ?? []) {
+    names[p.id] = publicLifterName(p.display_name, p.username);
+  }
 
   return data.map((row) => mapDuel(row, names));
 }

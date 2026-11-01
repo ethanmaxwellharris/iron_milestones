@@ -13,7 +13,7 @@ import type { Achievement } from "@/lib/codex/types";
 import { computeStats, newlyUnlocked } from "@/lib/codex/engine";
 import { PR_XP, workoutXp } from "@/lib/xp";
 import { uid } from "@/lib/utils";
-import { pushOrderState, pushProfile, pushUnlocks, pushWorkout } from "@/lib/sync";
+import { pushOrderState, pushProfile, pushProgress, removeWorkoutFromCloud } from "@/lib/sync";
 import type { GeneratedOrder, UserOrderState } from "@/lib/orders";
 import { orderStateKey } from "@/lib/orders";
 
@@ -69,10 +69,13 @@ interface IronState {
   orderStates: Record<string, UserOrderState>;
   /** duel id → XP already granted for it (settlement happens exactly once). */
   duelXp: Record<string, number>;
+  /** Workout ids removed locally. Hydrate must not resurrect them if the cloud delete has not landed. */
+  deletedWorkoutIds: string[];
 
   completeOnboarding: (profile: Profile, baseline: LoggedSet[]) => LogResult;
   updateProfile: (patch: Partial<Profile>) => void;
   logWorkout: (w: Omit<Workout, "id">) => LogResult;
+  deleteWorkout: (id: string) => void;
   addCustomLift: (name: string) => CustomLift;
   awardDuelXp: (duelId: string, amount: number) => number;
   claimOrder: (order: GeneratedOrder) => void;
@@ -138,6 +141,7 @@ export const useIronStore = create<IronState>()(
       customLifts: [],
       orderStates: {},
       duelXp: {},
+      deletedWorkoutIds: [],
 
       awardDuelXp: (duelId, amount) => {
         const state = get();
@@ -165,10 +169,13 @@ export const useIronStore = create<IronState>()(
         const xp = state.xp + settled.result.xpGained;
         set({ onboarded: true, profile, workouts, unlocked: settled.unlocked, xp });
 
-        const added = workouts[workouts.length - 1];
-        if (baseline.length > 0 && added) void pushWorkout(added);
-        void pushUnlocks(settled.result.newAchievements.map((a) => a.id));
-        void pushProfile(profile, xp);
+        const added = baseline.length > 0 ? workouts[workouts.length - 1] : null;
+        void pushProgress({
+          workout: added,
+          unlockIds: settled.result.newAchievements.map((a) => a.id),
+          profile,
+          xp,
+        });
         return settled.result;
       },
 
@@ -191,10 +198,27 @@ export const useIronStore = create<IronState>()(
           : state.profile;
         set({ workouts, unlocked: settled.unlocked, xp, profile });
 
-        void pushWorkout(workout);
-        void pushUnlocks(settled.result.newAchievements.map((a) => a.id));
-        void pushProfile(profile, xp);
+        void pushProgress({
+          workout,
+          unlockIds: settled.result.newAchievements.map((a) => a.id),
+          profile,
+          xp,
+        });
         return settled.result;
+      },
+
+      deleteWorkout: (id) => {
+        void (async () => {
+          const removed = await removeWorkoutFromCloud(id);
+          if (!removed) return;
+          set((state) => {
+            const existing = state.deletedWorkoutIds ?? [];
+            return {
+              workouts: state.workouts.filter((w) => w.id !== id),
+              deletedWorkoutIds: existing.includes(id) ? existing : [...existing, id],
+            };
+          });
+        })();
       },
 
       addCustomLift: (name) => {
@@ -253,16 +277,17 @@ export const useIronStore = create<IronState>()(
           xpAwarded: order.definition.xp,
         };
         set({ orderStates: { ...state.orderStates, [key]: next }, xp });
-        void pushOrderState(next);
-        void pushProfile(state.profile, xp);
+        void pushProgress({ order: next, profile: state.profile, xp });
         return order.definition.xp;
       },
 
       mergeCloudState: (cloud) => {
         const state = get();
+        const deleted = new Set(state.deletedWorkoutIds ?? []);
         // Cloud wins for anything it has; local-only workouts are kept.
-        const byId = new Map(cloud.workouts.map((w) => [w.id, w]));
-        for (const w of state.workouts) if (!byId.has(w.id)) byId.set(w.id, w);
+        // Tombstoned sessions stay gone even if the cloud delete has not landed.
+        const byId = new Map(cloud.workouts.filter((w) => !deleted.has(w.id)).map((w) => [w.id, w]));
+        for (const w of state.workouts) if (!byId.has(w.id) && !deleted.has(w.id)) byId.set(w.id, w);
         const workouts = [...byId.values()].sort((a, b) =>
           a.performedOn.localeCompare(b.performedOn),
         );
@@ -293,6 +318,7 @@ export const useIronStore = create<IronState>()(
           customLifts: [],
           orderStates: {},
           duelXp: {},
+          deletedWorkoutIds: [],
         }),
     }),
     {
