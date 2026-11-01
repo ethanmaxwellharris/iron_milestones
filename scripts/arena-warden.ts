@@ -8,6 +8,10 @@
  *   3. Posts a plausible score on the Warden's side of active duels,
  *      scaled by how much of the duel window has elapsed.
  *
+ * Signed-in lifters go through the duel RPCs. This script uses the service
+ * role, which bypasses RLS, and writes the Warden's own rows directly.
+ * It expects the security-hardening migration (profiles.display_name).
+ *
  * Usage:  npm run arena:warden        (run again any time to advance its turn)
  */
 
@@ -61,6 +65,7 @@ async function ensureWarden(): Promise<string> {
   const { error } = await supabase.from("profiles").upsert({
     id,
     username: WARDEN_NAME,
+    display_name: WARDEN_NAME,
     experience: "advanced",
     xp: 4200,
     arena_open: true,
